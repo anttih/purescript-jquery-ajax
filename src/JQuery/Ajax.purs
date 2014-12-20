@@ -48,12 +48,6 @@ makeResponse status text = Response {status: status, responseText: text}
 
 data Method = GET | POST | PUT | DELETE
 
-instance showMethod :: Show Method where
-  show GET = "GET"
-  show POST = "POST"
-  show PUT = "PUT"
-  show DELETE = "DELETE"
-
 type URL = String
 
 data DataType = Text | JSON | HTML

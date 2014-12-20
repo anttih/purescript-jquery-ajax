@@ -36,8 +36,6 @@
 
     instance errorResponse :: Error Response
 
-    instance showMethod :: Show Method
-
     instance showResponse :: Show Response
 
 
