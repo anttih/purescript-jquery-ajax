@@ -6,14 +6,12 @@
 
     data Ajax :: !
 
-    type Cb eff = ContT Unit (Eff (ajax :: Ajax | eff))
-
     data DataType where
       Text :: DataType
       JSON :: DataType
       HTML :: DataType
 
-    type EC eff = ErrorT Response (Cb eff)
+    type ErrCont eff = ErrorT Response (C eff)
 
     data Header where
       Header :: String -> String -> Header
@@ -43,19 +41,19 @@
 
     dataType :: DataType -> Settings -> Settings
 
-    delete :: forall eff. URL -> EC eff Foreign
+    delete :: forall eff. URL -> ErrCont eff Foreign
 
-    get :: forall eff. URL -> EC eff Foreign
+    get :: forall eff. URL -> ErrCont eff Foreign
 
-    getJson :: forall eff a. (IsForeign a) => URL -> EC eff (F a)
+    getJson :: forall eff a. (IsForeign a) => URL -> ErrCont eff (F a)
 
-    getWith :: forall eff. (Settings -> Settings) -> URL -> EC eff Foreign
+    getWith :: forall eff. (Settings -> Settings) -> URL -> ErrCont eff Foreign
 
     method :: Method -> Settings -> Settings
 
-    post :: forall eff. URL -> EC eff Foreign
+    post :: forall eff. URL -> ErrCont eff Foreign
 
-    put :: forall eff. URL -> EC eff Foreign
+    put :: forall eff. URL -> ErrCont eff Foreign
 
     url :: String -> Settings -> Settings
 
