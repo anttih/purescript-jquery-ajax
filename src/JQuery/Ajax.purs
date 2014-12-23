@@ -1,7 +1,6 @@
 module JQuery.Ajax
   ( Ajax()
-  , EC()
-  , Cb()
+  , ErrCont(..)
   , Settings()
   , Header(..)
   , DataType(..)
@@ -30,9 +29,9 @@ import Data.Function
 
 foreign import data Ajax :: !
 
-type Cb eff = ContT Unit (Eff (ajax :: Ajax | eff))
+type C eff = ContT Unit (Eff (ajax :: Ajax | eff))
 
-type EC eff = ErrorT Response (Cb eff)
+type ErrCont eff = ErrorT Response (C eff)
 
 newtype Response = Response {status :: Number, responseText :: String}
 
@@ -89,10 +88,10 @@ jqueryAjax :: forall eff. Settings
                        -> Eff (ajax :: Ajax | eff) Unit
 jqueryAjax s cb = runFn3 jqueryAjaxImpl s (cb <<< Left <<< Response) (cb <<< Right)
 
-jqueryAjaxCont :: forall eff. Settings -> EC eff Foreign
+jqueryAjaxCont :: forall eff. Settings -> ErrCont eff Foreign
 jqueryAjaxCont s = ErrorT $ ContT $ jqueryAjax s
 
-makeAjaxRequest :: forall eff. (Settings -> Settings) -> EC eff Foreign
+makeAjaxRequest :: forall eff. (Settings -> Settings) -> ErrCont eff Foreign
 makeAjaxRequest sf = jqueryAjaxCont $ sf defaultSettings
 
 defaultSettings :: Settings
@@ -103,22 +102,22 @@ defaultSettings =
   , dataType: Text
   }
 
-getWith :: forall eff. (Settings -> Settings) -> URL -> EC eff Foreign
+getWith :: forall eff. (Settings -> Settings) -> URL -> ErrCont eff Foreign
 getWith sf url' = makeAjaxRequest $ (url url' >>> sf)
 
-getJson :: forall eff a. (IsForeign a) => URL -> EC eff (F a)
+getJson :: forall eff a. (IsForeign a) => URL -> ErrCont eff (F a)
 getJson url' = read <$> getWith (dataType JSON) url'
 
-get :: forall eff. URL -> EC eff Foreign
+get :: forall eff. URL -> ErrCont eff Foreign
 get url' = makeAjaxRequest $ url url'
 
-post :: forall eff. URL -> EC eff Foreign
+post :: forall eff. URL -> ErrCont eff Foreign
 post url' = makeAjaxRequest $ (method POST >>> url url')
 
-put :: forall eff. URL -> EC eff Foreign
+put :: forall eff. URL -> ErrCont eff Foreign
 put url' = makeAjaxRequest $ (method PUT >>> url url')
 
-delete :: forall eff. URL -> EC eff Foreign
+delete :: forall eff. URL -> ErrCont eff Foreign
 delete url' = makeAjaxRequest $ (method DELETE >>> url url')
 
 -- options
