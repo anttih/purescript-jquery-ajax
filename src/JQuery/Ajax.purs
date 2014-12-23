@@ -1,5 +1,6 @@
 module JQuery.Ajax
   ( Ajax()
+  , C()
   , ErrCont(..)
   , Settings()
   , Header(..)
