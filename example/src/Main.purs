@@ -24,7 +24,7 @@ instance foreignPerson :: IsForeign Person where
 instance showPerson :: Show Person where
   show (Person first last _) = "Person: " ++ first ++ " " ++ last
 
-getPerson :: forall eff. EC eff (F Person)
+getPerson :: forall eff. ErrCont eff (F Person)
 getPerson = getJson "/public/person.json"
 
 showTrace :: forall eff a. (Show a) => a -> Eff (trace :: Trace | eff) Unit
