@@ -2,21 +2,23 @@ module JQuery.Ajax
   ( Ajax()
   , C()
   , ErrCont(..)
-  , Settings()
   , Header(..)
   , DataType(..)
   , Method(..)
   , URL()
   , Response(..)
+  , JQueryAjaxOptions()
   , getWith
   , get
-  , getJson
-  , put
-  , post
+  , getJSON
+  , postWith
+  , putWith
   , delete
   , url
   , method
   , dataType
+  , body
+  , contentType
   ) where
 
 import Control.Monad.Eff
@@ -27,6 +29,7 @@ import Control.Monad.Error.Trans
 import Data.Foreign.Class
 import Data.Foreign
 import Data.Function
+import Data.Options (Options(), Option(), IsOption, optionFn, options, (:=))
 
 foreign import data Ajax :: !
 
@@ -46,20 +49,9 @@ instance showResponse :: Show Response where
 makeResponse :: Number -> String -> Response
 makeResponse status text = Response {status: status, responseText: text}
 
-data Method = GET | POST | PUT | DELETE
-
 type URL = String
 
-data DataType = Text | JSON | HTML
-
 data Header = Header String String
-
-type Settings =
-  { url :: URL
-  , method :: Method
-  , headers :: [Header]
-  , dataType :: DataType
-  }
 
 type AjaxResponse = {status :: Number, responseText :: String}
 
@@ -67,8 +59,6 @@ foreign import jqueryAjaxImpl
   """
   function jqueryAjaxImpl(settings, onError, onSuccess) {
     return function() {
-      settings.method = settings.method.constructor.name;
-      settings.dataType = settings.dataType.constructor.name.toLowerCase();
       return jQuery.ajax(jQuery.extend({}, settings, {
         success: function(data) {
           onSuccess(data)();
@@ -79,54 +69,78 @@ foreign import jqueryAjaxImpl
       }));
     }
   }
-  """ :: forall eff. Fn3 Settings
+  """ :: forall eff. Fn3 Foreign
                          (AjaxResponse -> Eff (ajax :: Ajax | eff) Unit)
                          (Foreign -> Eff (ajax :: Ajax | eff) Unit)
                          (Eff (ajax :: Ajax | eff) Unit)
 
-jqueryAjax :: forall eff. Settings
+jqueryAjax :: forall eff. Options JQueryAjaxOptions
                        -> (Either Response Foreign -> Eff (ajax :: Ajax | eff) Unit)
                        -> Eff (ajax :: Ajax | eff) Unit
-jqueryAjax s cb = runFn3 jqueryAjaxImpl s (cb <<< Left <<< Response) (cb <<< Right)
+jqueryAjax s cb = runFn3 jqueryAjaxImpl (options s) (cb <<< Left <<< Response) (cb <<< Right)
 
-jqueryAjaxCont :: forall eff. Settings -> ErrCont eff Foreign
+jqueryAjaxCont :: forall eff. Options JQueryAjaxOptions -> ErrCont eff Foreign
 jqueryAjaxCont s = ErrorT $ ContT $ jqueryAjax s
 
-makeAjaxRequest :: forall eff. (Settings -> Settings) -> ErrCont eff Foreign
-makeAjaxRequest sf = jqueryAjaxCont $ sf defaultSettings
+getWith :: forall eff. Options JQueryAjaxOptions -> URL -> ErrCont eff Foreign
+getWith opts url' = jqueryAjaxCont $ url := url' <> opts
 
-defaultSettings :: Settings
-defaultSettings =
-  { method: GET
-  , url: "/"
-  , headers: []
-  , dataType: Text
-  }
-
-getWith :: forall eff. (Settings -> Settings) -> URL -> ErrCont eff Foreign
-getWith sf url' = makeAjaxRequest $ (url url' >>> sf)
-
-getJson :: forall eff a. (IsForeign a) => URL -> ErrCont eff (F a)
-getJson url' = read <$> getWith (dataType JSON) url'
+getJSON :: forall eff a. (IsForeign a) => URL -> ErrCont eff (F a)
+getJSON url' = read <$> getWith (dataType := JSON) url'
 
 get :: forall eff. URL -> ErrCont eff Foreign
-get url' = makeAjaxRequest $ url url'
+get url' = jqueryAjaxCont $ url := url'
 
-post :: forall eff. URL -> ErrCont eff Foreign
-post url' = makeAjaxRequest $ (method POST >>> url url')
+postWith :: forall eff. URL -> Options JQueryAjaxOptions -> ErrCont eff Foreign
+postWith url' opts = jqueryAjaxCont $ method := POST <> url := url' <> opts
 
-put :: forall eff. URL -> ErrCont eff Foreign
-put url' = makeAjaxRequest $ (method PUT >>> url url')
+putWith :: forall eff. URL -> Options JQueryAjaxOptions -> ErrCont eff Foreign
+putWith url' opts = jqueryAjaxCont $ method := PUT <> url := url' <> opts
 
 delete :: forall eff. URL -> ErrCont eff Foreign
-delete url' = makeAjaxRequest $ (method DELETE >>> url url')
+delete url' = jqueryAjaxCont $ method := DELETE <> url := url'
 
--- options
-url :: String -> Settings -> Settings
-url url' s = s { url = url' }
+foreign import data JQueryAjaxOptions :: *
 
-method :: Method -> Settings -> Settings
-method m s = s { method = m }
+foreign import unsafeToOption
+  """
+  function unsafeToOption(s) {
+    return s;
+  }
+  """ :: forall a. String -> Option JQueryAjaxOptions a
 
-dataType :: DataType -> Settings -> Settings
-dataType t s = s { dataType = t }
+url :: Option JQueryAjaxOptions String
+url = unsafeToOption "url"
+
+data Method = GET | POST | PUT | DELETE
+
+instance showMethod :: Show Method where
+  show GET = "GET"
+  show POST = "POST"
+  show PUT = "PUT"
+  show DELETE = "DELETE"
+
+instance methodIsOption :: IsOption Method where
+  (:=) k m = (optionFn k) := show m
+
+method :: Option JQueryAjaxOptions Method
+method = unsafeToOption "method"
+
+data DataType = Text | JSON | HTML
+
+instance showDataType :: Show DataType where
+  show Text = "text"
+  show JSON = "json"
+  show HTML = "html"
+
+instance dataTypeIsOption :: IsOption DataType where
+  (:=) k a = (optionFn k) := show a
+
+dataType :: Option JQueryAjaxOptions DataType
+dataType = unsafeToOption "dataType"
+
+body :: forall attrs. Option JQueryAjaxOptions String
+body = unsafeToOption "data"
+
+contentType :: Option JQueryAjaxOptions String
+contentType = unsafeToOption "contentType"
