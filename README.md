@@ -6,6 +6,8 @@
 
     data Ajax :: !
 
+    type C eff = ContT Unit (Eff (ajax :: Ajax | eff))
+
     data DataType where
       Text :: DataType
       JSON :: DataType
@@ -16,6 +18,8 @@
     data Header where
       Header :: String -> String -> Header
 
+    data JQueryAjaxOptions :: *
+
     data Method where
       GET :: Method
       POST :: Method
@@ -25,37 +29,47 @@
     newtype Response where
       Response :: { responseText :: String, status :: Number } -> Response
 
-    type Settings = { dataType :: DataType, headers :: [Header], method :: Method, url :: URL }
-
     type URL = String
 
 
 ### Type Class Instances
 
+    instance dataTypeIsOption :: IsOption DataType
+
     instance errorResponse :: Error Response
+
+    instance methodIsOption :: IsOption Method
+
+    instance showDataType :: Show DataType
+
+    instance showMethod :: Show Method
 
     instance showResponse :: Show Response
 
 
 ### Values
 
-    dataType :: DataType -> Settings -> Settings
+    body :: forall attrs. Option JQueryAjaxOptions String
+
+    contentType :: Option JQueryAjaxOptions String
+
+    dataType :: Option JQueryAjaxOptions DataType
 
     delete :: forall eff. URL -> ErrCont eff Foreign
 
     get :: forall eff. URL -> ErrCont eff Foreign
 
-    getJson :: forall eff a. (IsForeign a) => URL -> ErrCont eff (F a)
+    getJSON :: forall eff a. (IsForeign a) => URL -> ErrCont eff (F a)
 
-    getWith :: forall eff. (Settings -> Settings) -> URL -> ErrCont eff Foreign
+    getWith :: forall eff. Options JQueryAjaxOptions -> URL -> ErrCont eff Foreign
 
-    method :: Method -> Settings -> Settings
+    method :: Option JQueryAjaxOptions Method
 
-    post :: forall eff. URL -> ErrCont eff Foreign
+    postWith :: forall eff. URL -> Options JQueryAjaxOptions -> ErrCont eff Foreign
 
-    put :: forall eff. URL -> ErrCont eff Foreign
+    putWith :: forall eff. URL -> Options JQueryAjaxOptions -> ErrCont eff Foreign
 
-    url :: String -> Settings -> Settings
+    url :: Option JQueryAjaxOptions String
 
 
 
