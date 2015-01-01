@@ -17,7 +17,7 @@ module JQuery.Ajax
   , url
   , method
   , dataType
-  , setData
+  , body
   , contentType
   ) where
 
@@ -139,8 +139,8 @@ instance dataTypeIsOption :: IsOption DataType where
 dataType :: Option JQueryAjaxOptions DataType
 dataType = unsafeToOption "dataType"
 
-setData :: forall attrs. Option JQueryAjaxOptions String
-setData = unsafeToOption "data"
+body :: forall attrs. Option JQueryAjaxOptions String
+body = unsafeToOption "data"
 
 contentType :: Option JQueryAjaxOptions String
 contentType = unsafeToOption "contentType"

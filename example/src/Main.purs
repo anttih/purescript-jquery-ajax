@@ -38,7 +38,7 @@ contentTypeJson :: Options JQueryAjaxOptions
 contentTypeJson = contentType := "application/json; charset=utf-8"
 
 postJSON :: forall eff a. (ToJSON a) => a -> URL -> ErrCont eff Foreign
-postJSON d url' = postWith url' $ setData := (encode d) <> contentTypeJson
+postJSON d url = postWith url $ body := (encode d) <> contentTypeJson
 
 instance foreignPerson :: IsForeign Person where
   read value = do
