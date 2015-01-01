@@ -10,13 +10,15 @@ module JQuery.Ajax
   , JQueryAjaxOptions()
   , getWith
   , get
-  , getJson
-  , put
-  , post
+  , getJSON
+  , postWith
+  , putWith
   , delete
   , url
   , method
   , dataType
+  , setData
+  , contentType
   ) where
 
 import Control.Monad.Eff
@@ -83,22 +85,21 @@ jqueryAjaxCont s = ErrorT $ ContT $ jqueryAjax s
 getWith :: forall eff. Options JQueryAjaxOptions -> URL -> ErrCont eff Foreign
 getWith opts url' = jqueryAjaxCont $ url := url' <> opts
 
-getJson :: forall eff a. (IsForeign a) => URL -> ErrCont eff (F a)
-getJson url' = read <$> getWith (dataType := JSON) url'
+getJSON :: forall eff a. (IsForeign a) => URL -> ErrCont eff (F a)
+getJSON url' = read <$> getWith (dataType := JSON) url'
 
 get :: forall eff. URL -> ErrCont eff Foreign
 get url' = jqueryAjaxCont $ url := url'
 
-post :: forall eff. URL -> ErrCont eff Foreign
-post url' = jqueryAjaxCont (method := POST <> url := url')
+postWith :: forall eff. URL -> Options JQueryAjaxOptions -> ErrCont eff Foreign
+postWith url' opts = jqueryAjaxCont $ method := POST <> url := url' <> opts
 
-put :: forall eff. URL -> ErrCont eff Foreign
-put url' = jqueryAjaxCont (method := PUT <> url := url')
+putWith :: forall eff. URL -> Options JQueryAjaxOptions -> ErrCont eff Foreign
+putWith url' opts = jqueryAjaxCont $ method := PUT <> url := url' <> opts
 
 delete :: forall eff. URL -> ErrCont eff Foreign
-delete url' = jqueryAjaxCont $ (method := DELETE <> url := url')
+delete url' = jqueryAjaxCont $ method := DELETE <> url := url'
 
--- options
 foreign import data JQueryAjaxOptions :: *
 
 foreign import unsafeToOption
@@ -114,7 +115,7 @@ url = unsafeToOption "url"
 data Method = GET | POST | PUT | DELETE
 
 instance showMethod :: Show Method where
-  show GET = "get"
+  show GET = "GET"
   show POST = "POST"
   show PUT = "PUT"
   show DELETE = "DELETE"
@@ -137,3 +138,9 @@ instance dataTypeIsOption :: IsOption DataType where
 
 dataType :: Option JQueryAjaxOptions DataType
 dataType = unsafeToOption "dataType"
+
+setData :: forall attrs. Option JQueryAjaxOptions String
+setData = unsafeToOption "data"
+
+contentType :: Option JQueryAjaxOptions String
+contentType = unsafeToOption "contentType"
