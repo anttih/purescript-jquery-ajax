@@ -2,6 +2,7 @@
   "name": "purescript-jquery-ajax",
   "authors": ["Antti Holvikari <anttih@gmail.com>"],
   "description": "Make AJAX requests in PureScript using jQuery",
+  "version": "0.1.0",
   "keywords": ["jquery", "ajax", "purescript"],
   "dependencies": {
         "purescript-foreign": "*",
